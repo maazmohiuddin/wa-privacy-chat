@@ -1,0 +1,54 @@
+{
+  "name": "wa-single-chat",
+  "version": "1.0.0",
+  "description": "Single-chat WhatsApp UI",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "author": "local",
+  "dependencies": {
+    "electron-updater": "^6.8.9",
+    "qrcode": "^1.5.3",
+    "whatsapp-web.js": "^1.26.0"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.local.wa-single-chat",
+    "productName": "WA Single Chat",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "index.html",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "extraResources": [
+      {
+        "from": "chromium",
+        "to": "chromium"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "maazmohiuddin",
+      "repo": "wa-privacy-chat"
+    }
+  }
+}

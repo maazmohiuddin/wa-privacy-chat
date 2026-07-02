@@ -1,0 +1,21 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('wa', {
+  onQr: (cb) => ipcRenderer.on('qr', (_e, dataUrl) => cb(dataUrl)),
+  onStatus: (cb) => ipcRenderer.on('status', (_e, status) => cb(status)),
+  onHistory: (cb) => ipcRenderer.on('history', (_e, messages) => cb(messages)),
+  onMessage: (cb) => ipcRenderer.on('message', (_e, message) => cb(message)),
+  sendMessage: (text) => ipcRenderer.invoke('send-message', text),
+  sendImage: () => ipcRenderer.invoke('pick-and-send-image'),
+  getTarget: () => ipcRenderer.invoke('get-target'),
+  setTargetNumber: (number) => ipcRenderer.invoke('set-target-number', number),
+  closeWindow: () => ipcRenderer.send('window-close'),
+  maximizeWindow: () => ipcRenderer.send('window-maximize'),
+  onLock: (cb) => ipcRenderer.on('lock', (_e, locked) => cb(locked)),
+  getLockStatus: () => ipcRenderer.invoke('lock-get-status'),
+  setLockSecret: (method, secret) => ipcRenderer.invoke('lock-set-secret', { method, secret }),
+  clearLockSecret: () => ipcRenderer.invoke('lock-clear-secret'),
+  verifyLockSecret: (secret) => ipcRenderer.invoke('lock-verify', secret),
+  onUpdateStatus: (cb) => ipcRenderer.on('update-status', (_e, info) => cb(info)),
+  installUpdate: () => ipcRenderer.send('update-install'),
+});

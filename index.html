@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>wa::chat</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Cascadia Code", "Consolas", "Courier New", monospace;
+    background: #0c0c0c;
+    color: #d4d4d4;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    font-size: 13px;
+  }
+  #header {
+    background: #000;
+    color: #0f0;
+    padding: 6px 6px 6px 12px;
+    border-bottom: 1px solid #222;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    -webkit-app-region: drag;
+  }
+  #title-wrap { display: flex; align-items: center; gap: 10px; }
+  #title { cursor: pointer; -webkit-app-region: no-drag; }
+  #title::before { content: "$ wa --target "; color: #555; }
+  #title .mask { color: #444; letter-spacing: 1px; }
+  #title.revealed .mask { display: none; }
+  #title .real { display: none; }
+  #title.revealed .real { display: inline; }
+  #status {
+    opacity: 0.8;
+  }
+  #status::before { content: "[status] "; color: #555; }
+  #win-controls {
+    display: flex;
+    gap: 4px;
+    -webkit-app-region: no-drag;
+  }
+  #win-controls button {
+    width: 26px;
+    height: 22px;
+    border: 1px solid #222;
+    background: #0c0c0c;
+    color: #0f0;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  #win-controls button:hover { background: #1a1a1a; }
+  #win-close:hover { background: #5c1a1a; color: #fff; }
+  #lock-settings-btn { font-size: 13px; }
+  #setup-screen {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 30px;
+    text-align: center;
+  }
+  #setup-screen p { color: #0f0; margin: 0; }
+  #setup-screen p::before { content: "> "; }
+  #setup-screen input {
+    width: 220px;
+    padding: 8px;
+    background: #0c0c0c;
+    border: 1px solid #333;
+    color: #d4d4d4;
+    font-family: inherit;
+    font-size: 13px;
+    text-align: center;
+  }
+  #setup-screen input:focus { outline: 1px solid #0f0; }
+  #setup-screen button {
+    padding: 8px 16px;
+    border: 1px solid #333;
+    background: #111;
+    color: #0f0;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  #setup-screen button:hover { background: #1a1a1a; }
+  #setup-msg { font-size: 11px; color: #c44; min-height: 14px; }
+  #qr-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+  #qr-screen p { color: #0f0; }
+  #qr-screen p::before { content: "> "; }
+  #qr-screen img {
+    width: 260px;
+    height: 260px;
+    border: 1px solid #0f0;
+  }
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 14px;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .line {
+    display: flex;
+    gap: 8px;
+    padding: 2px 4px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    cursor: pointer;
+  }
+  .line .arrow {
+    color: #555;
+    flex-shrink: 0;
+  }
+  .line.me .arrow { color: #0a84ff; }
+  .line.them .arrow { color: #0f0; }
+  .line .mask {
+    color: #444;
+    letter-spacing: 1px;
+  }
+  .line .real {
+    display: none;
+  }
+  .line.revealed .mask { display: none; }
+  .line.revealed .real { display: inline; }
+  body.locked .line.revealed .mask { display: inline; }
+  body.locked .line.revealed .real { display: none; }
+  #input-bar {
+    display: none;
+    padding: 8px 10px;
+    background: #000;
+    border-top: 1px solid #222;
+    gap: 8px;
+  }
+  #input-bar .prompt {
+    color: #0f0;
+    align-self: center;
+  }
+  #input-bar input {
+    flex: 1;
+    padding: 8px;
+    background: #0c0c0c;
+    border: 1px solid #333;
+    color: #d4d4d4;
+    font-family: inherit;
+    font-size: 13px;
+  }
+  #input-bar input:focus { outline: 1px solid #0f0; }
+  #input-bar button {
+    padding: 8px 14px;
+    border: 1px solid #333;
+    background: #111;
+    color: #0f0;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  #input-bar button:hover { background: #1a1a1a; }
+  #img-btn { padding: 8px 10px; }
+
+  #modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1100;
+  }
+  #modal-overlay.show { display: flex; }
+  #modal {
+    background: #0c0c0c;
+    border: 1px solid #333;
+    padding: 16px;
+    width: 260px;
+    color: #d4d4d4;
+  }
+  #modal h3 {
+    margin: 0 0 10px;
+    color: #0f0;
+    font-size: 13px;
+    font-weight: normal;
+  }
+  #modal .row { display: flex; gap: 8px; margin-bottom: 8px; }
+  #modal button {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #333;
+    background: #111;
+    color: #0f0;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  #modal button:hover { background: #1a1a1a; }
+  #modal input {
+    width: 100%;
+    padding: 8px;
+    background: #0c0c0c;
+    border: 1px solid #333;
+    color: #d4d4d4;
+    font-family: inherit;
+    font-size: 13px;
+    margin-bottom: 8px;
+    box-sizing: border-box;
+    letter-spacing: 3px;
+  }
+  #modal-msg { font-size: 11px; color: #888; min-height: 14px; margin-bottom: 6px; }
+  #modal-close { background: none; border: none; color: #666; cursor: pointer; float: right; font-size: 12px; }
+
+  .lock-auth {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  body.locked.auth-pending .lock-auth { display: flex; }
+  body.locked.auth-pending #lock-hint { display: none; }
+  .pin-display {
+    font-size: 20px;
+    letter-spacing: 8px;
+    color: #0f0;
+    min-height: 26px;
+  }
+  .pin-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 48px);
+    gap: 8px;
+  }
+  .pin-pad button {
+    width: 48px;
+    height: 48px;
+    border: 1px solid #333;
+    background: #111;
+    color: #d4d4d4;
+    font-family: inherit;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .pin-pad button:hover { background: #1a1a1a; }
+  .pattern-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 44px);
+    gap: 14px;
+  }
+  .pattern-dot {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid #333;
+    background: #111;
+    cursor: pointer;
+  }
+  .pattern-dot.active { background: #0f0; border-color: #0f0; }
+  .auth-error { color: #c44; font-size: 11px; min-height: 14px; }
+
+  .img-wrap {
+    position: relative;
+    display: inline-block;
+    max-width: 220px;
+  }
+  .img-wrap img {
+    max-width: 220px;
+    max-height: 220px;
+    display: block;
+    border: 1px solid #333;
+  }
+  .img-wrap .img-mask {
+    position: absolute;
+    inset: 0;
+    background: #0c0c0c;
+    border: 1px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #444;
+    letter-spacing: 1px;
+    font-size: 12px;
+  }
+  .line.revealed .img-wrap .img-mask {
+    display: none;
+  }
+  body.locked .line.revealed .img-wrap .img-mask {
+    display: flex;
+  }
+
+  #lock-overlay {
+    position: fixed;
+    inset: 0;
+    background: #0c0c0c;
+    color: #333;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    letter-spacing: 1px;
+    z-index: 999;
+  }
+  body.locked #lock-overlay {
+    display: flex;
+  }
+  #lock-dot, .lock-dot-auth {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-left: 8px;
+    border-radius: 50%;
+    background: transparent;
+    transition: background 0.6s ease;
+  }
+  #lock-overlay.has-activity #lock-dot,
+  #lock-overlay.has-activity .lock-dot-auth {
+    background: #2a4a2a;
+  }
+
+  #update-bar {
+    display: none;
+    background: #0a1a0a;
+    border-bottom: 1px solid #1a3a1a;
+    padding: 5px 14px;
+    font-size: 11px;
+    color: #0f0;
+    align-items: center;
+    gap: 10px;
+  }
+  #update-bar.show { display: flex; }
+  #update-bar span { flex: 1; opacity: 0.85; }
+  #update-bar button {
+    padding: 3px 10px;
+    border: 1px solid #0f0;
+    background: none;
+    color: #0f0;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  #update-bar button:hover { background: #0a2a0a; }
+</style>
+</head>
+<body>
+  <div id="header">
+    <div id="title-wrap">
+      <span id="title"><span class="mask"></span><span class="real"></span></span>
+      <span id="status">connecting...</span>
+    </div>
+    <div id="win-controls">
+      <button id="edit-number-btn" title="edit number">✎</button>
+      <button id="lock-settings-btn" title="lock settings">🔒</button>
+      <button id="win-resize" title="resize">▢</button>
+      <button id="win-close" title="close">✕</button>
+    </div>
+  </div>
+
+  <div id="update-bar">
+    <span id="update-msg"></span>
+    <button id="update-btn" style="display:none">restart &amp; install</button>
+  </div>
+
+  <div id="setup-screen">
+    <p>enter the WhatsApp number to chat with</p>
+    <input id="setup-input" placeholder="+1 555 0100" autocomplete="off" />
+    <button id="setup-btn">continue</button>
+    <div id="setup-msg"></div>
+  </div>
+
+  <div id="qr-screen">
+    <p>scan this QR code with WhatsApp on your phone</p>
+    <img id="qr-img" src="" />
+  </div>
+
+  <div id="chat"></div>
+
+  <div id="input-bar">
+    <span class="prompt">&gt;</span>
+    <input id="msg-input" placeholder="type a message and hit enter" autocomplete="off" />
+    <button id="img-btn" title="send image">📷</button>
+    <button id="sched-btn" title="schedule message">⏱</button>
+    <button id="send-btn">send</button>
+  </div>
+
+  <div id="lock-overlay">
+    <span id="lock-hint">&gt; locked _<span id="lock-dot"></span></span>
+    <div class="lock-auth" id="lock-auth">
+      <div id="pin-auth" style="display:none; flex-direction:column; align-items:center; gap:10px;">
+        <div class="pin-display" id="pin-display"></div>
+        <div class="pin-pad" id="pin-pad"></div>
+      </div>
+      <div id="pattern-auth" style="display:none; flex-direction:column; align-items:center; gap:10px;">
+        <div class="pattern-grid" id="pattern-grid"></div>
+      </div>
+      <div class="auth-error" id="auth-error"></div>
+      <span class="lock-dot-auth" id="lock-dot-auth"></span>
+    </div>
+  </div>
+
+  <div id="modal-overlay">
+    <div id="modal">
+      <button id="modal-close">✕</button>
+      <h3 id="modal-title">lock settings</h3>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
