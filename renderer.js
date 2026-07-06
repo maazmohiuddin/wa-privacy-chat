@@ -1,3 +1,49 @@
+const THEMES = [
+  { name: 'green',   accent: '#00ff00', dim: '#0a1a0a', border: '#1a3a1a' },
+  { name: 'cyan',    accent: '#00e5ff', dim: '#001a1f', border: '#003a45' },
+  { name: 'blue',    accent: '#4da6ff', dim: '#001020', border: '#002040' },
+  { name: 'purple',  accent: '#c084fc', dim: '#120a1f', border: '#2a1a40' },
+  { name: 'red',     accent: '#ff4444', dim: '#1a0a0a', border: '#3a1a1a' },
+  { name: 'amber',   accent: '#ffb300', dim: '#1a1200', border: '#3a2a00' },
+  { name: 'white',   accent: '#e0e0e0', dim: '#141414', border: '#2a2a2a' },
+];
+
+function applyTheme(name) {
+  const t = THEMES.find(t => t.name === name) || THEMES[0];
+  const root = document.documentElement;
+  root.style.setProperty('--accent', t.accent);
+  root.style.setProperty('--accent-dim', t.dim);
+  root.style.setProperty('--accent-border', t.border);
+  localStorage.setItem('theme', name);
+}
+
+applyTheme(localStorage.getItem('theme') || 'green');
+
+const themeBtn = document.getElementById('theme-btn');
+themeBtn.addEventListener('click', () => {
+  modalTitle.textContent = 'color theme';
+  modalBody.innerHTML = '';
+
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:8px;';
+
+  THEMES.forEach(t => {
+    const btn = document.createElement('button');
+    btn.style.cssText = `padding:10px 4px;border:1px solid ${t.accent}33;background:#111;color:${t.accent};font-family:inherit;font-size:11px;cursor:pointer;border-radius:2px;`;
+    btn.textContent = t.name;
+    const current = localStorage.getItem('theme') || 'green';
+    if (t.name === current) btn.style.borderColor = t.accent;
+    btn.addEventListener('click', () => {
+      applyTheme(t.name);
+      modalOverlay.classList.remove('show');
+    });
+    grid.appendChild(btn);
+  });
+
+  modalBody.appendChild(grid);
+  modalOverlay.classList.add('show');
+});
+
 const updateBar = document.getElementById('update-bar');
 const updateMsg = document.getElementById('update-msg');
 const updateBtn = document.getElementById('update-btn');

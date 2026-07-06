@@ -4,6 +4,11 @@
 <meta charset="UTF-8" />
 <title>wa::chat</title>
 <style>
+  :root {
+    --accent: #00ff00;
+    --accent-dim: #0a1a0a;
+    --accent-border: #1a3a1a;
+  }
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -17,7 +22,7 @@
   }
   #header {
     background: #000;
-    color: #0f0;
+    color: var(--accent);
     padding: 6px 6px 6px 12px;
     border-bottom: 1px solid #222;
     display: flex;
@@ -32,9 +37,7 @@
   #title.revealed .mask { display: none; }
   #title .real { display: none; }
   #title.revealed .real { display: inline; }
-  #status {
-    opacity: 0.8;
-  }
+  #status { opacity: 0.8; }
   #status::before { content: "[status] "; color: #555; }
   #win-controls {
     display: flex;
@@ -46,7 +49,7 @@
     height: 22px;
     border: 1px solid #222;
     background: #0c0c0c;
-    color: #0f0;
+    color: var(--accent);
     font-family: inherit;
     font-size: 12px;
     cursor: pointer;
@@ -65,7 +68,7 @@
     padding: 0 30px;
     text-align: center;
   }
-  #setup-screen p { color: #0f0; margin: 0; }
+  #setup-screen p { color: var(--accent); margin: 0; }
   #setup-screen p::before { content: "> "; }
   #setup-screen input {
     width: 220px;
@@ -77,12 +80,12 @@
     font-size: 13px;
     text-align: center;
   }
-  #setup-screen input:focus { outline: 1px solid #0f0; }
+  #setup-screen input:focus { outline: 1px solid var(--accent); }
   #setup-screen button {
     padding: 8px 16px;
     border: 1px solid #333;
     background: #111;
-    color: #0f0;
+    color: var(--accent);
     font-family: inherit;
     font-size: 13px;
     cursor: pointer;
@@ -97,12 +100,12 @@
     justify-content: center;
     gap: 12px;
   }
-  #qr-screen p { color: #0f0; }
+  #qr-screen p { color: var(--accent); }
   #qr-screen p::before { content: "> "; }
   #qr-screen img {
     width: 260px;
     height: 260px;
-    border: 1px solid #0f0;
+    border: 1px solid var(--accent);
   }
   #chat {
     flex: 1;
@@ -125,7 +128,7 @@
     flex-shrink: 0;
   }
   .line.me .arrow { color: #0a84ff; }
-  .line.them .arrow { color: #0f0; }
+  .line.them .arrow { color: var(--accent); }
   .line .mask {
     color: #444;
     letter-spacing: 1px;
@@ -145,7 +148,7 @@
     gap: 8px;
   }
   #input-bar .prompt {
-    color: #0f0;
+    color: var(--accent);
     align-self: center;
   }
   #input-bar input {
@@ -157,12 +160,12 @@
     font-family: inherit;
     font-size: 13px;
   }
-  #input-bar input:focus { outline: 1px solid #0f0; }
+  #input-bar input:focus { outline: 1px solid var(--accent); }
   #input-bar button {
     padding: 8px 14px;
     border: 1px solid #333;
     background: #111;
-    color: #0f0;
+    color: var(--accent);
     font-family: inherit;
     font-size: 13px;
     cursor: pointer;
@@ -189,7 +192,7 @@
   }
   #modal h3 {
     margin: 0 0 10px;
-    color: #0f0;
+    color: var(--accent);
     font-size: 13px;
     font-weight: normal;
   }
@@ -199,7 +202,7 @@
     padding: 8px;
     border: 1px solid #333;
     background: #111;
-    color: #0f0;
+    color: var(--accent);
     font-family: inherit;
     font-size: 12px;
     cursor: pointer;
@@ -231,7 +234,7 @@
   .pin-display {
     font-size: 20px;
     letter-spacing: 8px;
-    color: #0f0;
+    color: var(--accent);
     min-height: 26px;
   }
   .pin-pad {
@@ -263,7 +266,7 @@
     background: #111;
     cursor: pointer;
   }
-  .pattern-dot.active { background: #0f0; border-color: #0f0; }
+  .pattern-dot.active { background: var(--accent); border-color: var(--accent); }
   .auth-error { color: #c44; font-size: 11px; min-height: 14px; }
 
   .img-wrap {
@@ -327,11 +330,11 @@
 
   #update-bar {
     display: none;
-    background: #0a1a0a;
-    border-bottom: 1px solid #1a3a1a;
+    background: var(--accent-dim);
+    border-bottom: 1px solid var(--accent-border);
     padding: 5px 14px;
     font-size: 11px;
-    color: #0f0;
+    color: var(--accent);
     align-items: center;
     gap: 10px;
   }
@@ -339,9 +342,9 @@
   #update-bar span { flex: 1; opacity: 0.85; }
   #update-bar button {
     padding: 3px 10px;
-    border: 1px solid #0f0;
+    border: 1px solid var(--accent);
     background: none;
-    color: #0f0;
+    color: var(--accent);
     font-family: inherit;
     font-size: 11px;
     cursor: pointer;
@@ -357,6 +360,7 @@
     </div>
     <div id="win-controls">
       <button id="edit-number-btn" title="edit number">✎</button>
+      <button id="theme-btn" title="color theme">🎨</button>
       <button id="lock-settings-btn" title="lock settings">🔒</button>
       <button id="win-resize" title="resize">▢</button>
       <button id="win-close" title="close">✕</button>
