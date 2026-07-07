@@ -51,18 +51,22 @@ const updateBtn = document.getElementById('update-btn');
 wa.onUpdateStatus((info) => {
   updateBar.classList.add('show');
   if (info.state === 'available') {
-    updateMsg.textContent = `update v${info.version} available — downloading...`;
+    updateMsg.textContent = `v${info.version} available — starting download...`;
     updateBtn.style.display = 'none';
   } else if (info.state === 'downloading') {
-    updateMsg.textContent = `downloading update... ${info.percent}%`;
+    updateMsg.textContent = `downloading update  ${info.percent}%  [${'█'.repeat(Math.floor(info.percent / 10))}${'░'.repeat(10 - Math.floor(info.percent / 10))}]`;
     updateBtn.style.display = 'none';
   } else if (info.state === 'ready') {
-    updateMsg.textContent = 'update ready to install';
+    updateMsg.textContent = 'download complete — restart to install';
     updateBtn.style.display = '';
   }
 });
 
-updateBtn.addEventListener('click', () => wa.installUpdate());
+updateBtn.addEventListener('click', () => {
+  updateMsg.textContent = 'installing update and restarting...';
+  updateBtn.style.display = 'none';
+  setTimeout(() => wa.installUpdate(), 400);
+});
 
 const qrScreen = document.getElementById('qr-screen');
 const qrImg = document.getElementById('qr-img');

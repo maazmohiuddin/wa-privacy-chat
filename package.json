@@ -1,6 +1,6 @@
 {
   "name": "wa-single-chat",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Single-chat WhatsApp UI",
   "main": "main.js",
   "scripts": {
