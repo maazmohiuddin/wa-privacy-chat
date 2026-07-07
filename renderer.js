@@ -78,6 +78,16 @@ const setupScreen = document.getElementById('setup-screen');
 const setupInput = document.getElementById('setup-input');
 const setupBtn = document.getElementById('setup-btn');
 const setupMsg = document.getElementById('setup-msg');
+const contactScreen = document.getElementById('contact-screen');
+const contactList = document.getElementById('contact-list');
+const contactSearch = document.getElementById('contact-search');
+const typingIndicator = document.getElementById('typing-indicator');
+const searchBar = document.getElementById('search-bar');
+const searchInput = document.getElementById('search-input');
+const searchCount = document.getElementById('search-count');
+const searchClose = document.getElementById('search-close');
+const unreadBadge = document.getElementById('unread-badge');
+let unreadCount = 0;
 
 function updateTitle(t) {
   const mask = titleEl.querySelector('.mask');
@@ -183,6 +193,8 @@ function engageLock() {
 function disengageLock() {
   document.body.classList.remove('locked', 'auth-pending');
   lockOverlay.classList.remove('has-activity');
+  unreadCount = 0;
+  unreadBadge.textContent = '';
 }
 
 wa.onLock((blurred) => {
@@ -468,9 +480,57 @@ wa.onMessage((message) => {
     playNotificationSound();
     if (document.body.classList.contains('locked')) {
       lockOverlay.classList.add('has-activity');
+      unreadCount++;
+      unreadBadge.textContent = unreadCount === 1 ? '1 new message' : `${unreadCount} new messages`;
     }
   }
 });
+
+wa.onTyping((isTyping) => {
+  typingIndicator.classList.toggle('show', isTyping);
+});
+
+wa.onAck(({ id, ack }) => {
+  const el = document.querySelector(`[data-id="${CSS.escape(id)}"] .ack`);
+  if (!el) return;
+  if (ack >= 3) { el.textContent = '✓✓'; el.className = 'ack read'; }
+  else if (ack >= 2) { el.textContent = '✓✓'; el.className = 'ack delivered'; }
+  else if (ack >= 1) { el.textContent = '✓'; el.className = 'ack'; }
+});
+
+wa.onContactPicker(async () => {
+  qrScreen.style.display = 'none';
+  contactScreen.style.display = 'flex';
+  statusEl.textContent = 'pick a contact';
+  const chats = await wa.getChats();
+  renderContactList(chats, '');
+  contactSearch.addEventListener('input', () => renderContactList(chats, contactSearch.value));
+});
+
+function renderContactList(chats, filter) {
+  const q = filter.toLowerCase();
+  const filtered = q
+    ? chats.filter(c => c.name.toLowerCase().includes(q) || c.number.includes(q))
+    : chats;
+  contactList.innerHTML = '';
+  filtered.forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'contact-item';
+    item.innerHTML = `<span class="c-name">${c.name}</span><span class="c-num">+${c.number}</span>${c.lastMessage ? `<span class="c-last">${c.lastMessage}</span>` : ''}`;
+    item.addEventListener('click', async () => {
+      await wa.setTargetNumber(c.number);
+      currentTarget = c.number;
+      updateTitle(c.number);
+      contactScreen.style.display = 'none';
+      qrScreen.style.display = 'none';
+      statusEl.textContent = 'loading...';
+    });
+    contactList.appendChild(item);
+  });
+  if (!filtered.length) {
+    contactList.innerHTML = '<div style="color:#444;font-size:12px;padding:8px;">no contacts found</div>';
+  }
+}
 
 function playNotificationSound() {
   try {
@@ -493,6 +553,7 @@ function playNotificationSound() {
 function addBubble(message) {
   const div = document.createElement('div');
   div.className = 'line ' + (message.fromMe ? 'me' : 'them');
+  if (message.id) div.dataset.id = message.id;
 
   const arrow = document.createElement('span');
   arrow.className = 'arrow';
@@ -537,6 +598,13 @@ function addBubble(message) {
     div.appendChild(real);
   }
 
+  if (message.fromMe) {
+    const ack = document.createElement('span');
+    ack.className = 'ack';
+    ack.textContent = '✓';
+    div.appendChild(ack);
+  }
+
   div.addEventListener('click', () => div.classList.toggle('revealed'));
 
   chatEl.appendChild(div);
@@ -554,6 +622,58 @@ async function send() {
 sendBtn.addEventListener('click', send);
 input.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') send();
+});
+
+// --- search ---
+const searchBtn = document.getElementById('search-btn');
+searchBtn.addEventListener('click', () => {
+  searchBar.classList.add('show');
+  searchInput.focus();
+});
+searchClose.addEventListener('click', () => {
+  searchBar.classList.remove('show');
+  searchInput.value = '';
+  document.querySelectorAll('.line').forEach(l => {
+    l.classList.remove('search-hide', 'search-match');
+  });
+  searchCount.textContent = '';
+});
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim().toLowerCase();
+  const lines = document.querySelectorAll('.line');
+  if (!q) {
+    lines.forEach(l => l.classList.remove('search-hide', 'search-match'));
+    searchCount.textContent = '';
+    return;
+  }
+  let matches = 0;
+  lines.forEach(l => {
+    const text = (l.querySelector('.real') || l).textContent.toLowerCase();
+    const hit = text.includes(q);
+    l.classList.toggle('search-hide', !hit);
+    l.classList.toggle('search-match', hit);
+    if (hit) matches++;
+  });
+  searchCount.textContent = `${matches} found`;
+});
+
+// --- paste image ---
+input.addEventListener('paste', async (e) => {
+  const items = Array.from(e.clipboardData.items);
+  const imgItem = items.find(i => i.type.startsWith('image/'));
+  if (!imgItem) return;
+  e.preventDefault();
+  const blob = imgItem.getAsFile();
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const dataUrl = reader.result;
+    const base64 = dataUrl.split(',')[1];
+    const mimetype = imgItem.type;
+    await wa.sendImageData(mimetype, base64);
+    addBubble({ body: '', fromMe: true, hasMedia: true, media: { mimetype, data: base64 } });
+    chatEl.scrollTop = chatEl.scrollHeight;
+  };
+  reader.readAsDataURL(blob);
 });
 
 const imgBtn = document.getElementById('img-btn');

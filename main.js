@@ -107,6 +107,19 @@ function getChromiumExecutablePath() {
   return fs.existsSync(exe) ? exe : undefined;
 }
 
+let typingInterval = null;
+
+function startTypingCheck() {
+  if (typingInterval) clearInterval(typingInterval);
+  typingInterval = setInterval(async () => {
+    if (!isClientReady || !targetChatId) return;
+    try {
+      const chat = await client.getChatById(targetChatId);
+      send('typing', chat.isTyping || false);
+    } catch {}
+  }, 2500);
+}
+
 function startClient() {
   if (client) return;
   client = new Client({
@@ -137,7 +150,12 @@ function startClient() {
     console.log('CLIENT READY');
     isClientReady = true;
     send('status', 'connected');
-    await loadChatHistory();
+    if (targetDigits) {
+      await loadChatHistory();
+      startTypingCheck();
+    } else {
+      send('show-contact-picker');
+    }
   });
 
   client.on('message', async (msg) => {
@@ -146,8 +164,15 @@ function startClient() {
     }
   });
 
+  client.on('message_ack', (msg, ack) => {
+    if (msg.to === targetChatId) {
+      send('ack', { id: msg.id._serialized, ack });
+    }
+  });
+
   client.on('disconnected', () => {
     isClientReady = false;
+    if (typingInterval) clearInterval(typingInterval);
     send('status', 'disconnected');
   });
 
@@ -208,9 +233,33 @@ ipcMain.handle('set-target-number', async (_event, number) => {
   if (isClientReady) {
     send('status', 'connected');
     await loadChatHistory();
+    startTypingCheck();
   } else {
     startClient();
   }
+  return true;
+});
+
+ipcMain.handle('get-chats', async () => {
+  try {
+    const chats = await client.getChats();
+    return chats
+      .filter(c => !c.isGroup && c.id._serialized !== 'status@broadcast')
+      .slice(0, 40)
+      .map(c => ({
+        id: c.id._serialized,
+        number: c.id.user,
+        name: c.name || c.id.user,
+        lastMessage: c.lastMessage ? (c.lastMessage.body || '').slice(0, 50) : '',
+      }));
+  } catch (err) {
+    return [];
+  }
+});
+
+ipcMain.handle('send-image-data', async (_event, { mimetype, data }) => {
+  const media = new MessageMedia(mimetype, data);
+  await client.sendMessage(targetChatId, media);
   return true;
 });
 
@@ -275,7 +324,7 @@ ipcMain.on('update-install', () => {
 app.whenReady().then(() => {
   initStorage();
   createWindow();
-  if (config.targetPhoneNumber) startClient();
+  startClient();
   initAutoUpdater();
 
   app.on('activate', () => {

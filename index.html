@@ -328,6 +328,100 @@
     background: #2a4a2a;
   }
 
+  #unread-badge {
+    display: none;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-top: 6px;
+    opacity: 0.7;
+  }
+  #lock-overlay.has-activity #unread-badge { display: block; }
+
+  #contact-screen {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    padding: 10px 14px;
+    gap: 6px;
+    overflow: hidden;
+  }
+  #contact-screen p { color: var(--accent); margin: 0 0 6px; font-size: 12px; }
+  #contact-screen p::before { content: "> "; }
+  #contact-search {
+    width: 100%;
+    padding: 7px 10px;
+    background: #0c0c0c;
+    border: 1px solid #333;
+    color: #d4d4d4;
+    font-family: inherit;
+    font-size: 12px;
+    box-sizing: border-box;
+    margin-bottom: 4px;
+  }
+  #contact-search:focus { outline: 1px solid var(--accent); }
+  #contact-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .contact-item {
+    padding: 7px 10px;
+    border: 1px solid #1a1a1a;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .contact-item:hover { border-color: var(--accent); background: #111; }
+  .contact-item .c-name { color: var(--accent); font-size: 12px; }
+  .contact-item .c-num { color: #555; font-size: 11px; }
+  .contact-item .c-last { color: #444; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  #search-bar {
+    display: none;
+    padding: 5px 10px;
+    background: #000;
+    border-bottom: 1px solid #1a1a1a;
+    gap: 8px;
+    align-items: center;
+  }
+  #search-bar.show { display: flex; }
+  #search-input {
+    flex: 1;
+    padding: 5px 8px;
+    background: #0c0c0c;
+    border: 1px solid #333;
+    color: #d4d4d4;
+    font-family: inherit;
+    font-size: 12px;
+  }
+  #search-input:focus { outline: 1px solid var(--accent); }
+  #search-count { font-size: 11px; color: #555; white-space: nowrap; }
+  #search-close { background: none; border: none; color: #555; cursor: pointer; font-size: 13px; padding: 0 4px; }
+
+  #typing-indicator {
+    display: none;
+    padding: 3px 14px;
+    font-size: 11px;
+    color: #555;
+    letter-spacing: 1px;
+  }
+  #typing-indicator.show { display: block; }
+
+  .line .ack {
+    font-size: 10px;
+    margin-left: 4px;
+    color: #444;
+    flex-shrink: 0;
+  }
+  .line .ack.delivered { color: #666; }
+  .line .ack.read { color: var(--accent); }
+  .line.search-hide { display: none; }
+  .line.search-match { outline: 1px solid var(--accent)33; }
+
   #update-bar {
     display: none;
     background: var(--accent-dim);
@@ -372,6 +466,18 @@
     <button id="update-btn" style="display:none">restart &amp; install</button>
   </div>
 
+  <div id="contact-screen">
+    <p>select a contact to chat with</p>
+    <input id="contact-search" placeholder="search by name or number..." autocomplete="off" />
+    <div id="contact-list"></div>
+  </div>
+
+  <div id="search-bar">
+    <input id="search-input" placeholder="search messages..." autocomplete="off" />
+    <span id="search-count"></span>
+    <button id="search-close">✕</button>
+  </div>
+
   <div id="setup-screen">
     <p>enter the WhatsApp number to chat with</p>
     <input id="setup-input" placeholder="+1 555 0100" autocomplete="off" />
@@ -386,16 +492,22 @@
 
   <div id="chat"></div>
 
+  <div id="typing-indicator">· · ·</div>
+
   <div id="input-bar">
     <span class="prompt">&gt;</span>
     <input id="msg-input" placeholder="type a message and hit enter" autocomplete="off" />
+    <button id="search-btn" title="search messages">🔍</button>
     <button id="img-btn" title="send image">📷</button>
     <button id="sched-btn" title="schedule message">⏱</button>
     <button id="send-btn">send</button>
   </div>
 
   <div id="lock-overlay">
-    <span id="lock-hint">&gt; locked _<span id="lock-dot"></span></span>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+      <span id="lock-hint">&gt; locked _<span id="lock-dot"></span></span>
+      <span id="unread-badge"></span>
+    </div>
     <div class="lock-auth" id="lock-auth">
       <div id="pin-auth" style="display:none; flex-direction:column; align-items:center; gap:10px;">
         <div class="pin-display" id="pin-display"></div>

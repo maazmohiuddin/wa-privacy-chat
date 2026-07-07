@@ -18,4 +18,9 @@ contextBridge.exposeInMainWorld('wa', {
   verifyLockSecret: (secret) => ipcRenderer.invoke('lock-verify', secret),
   onUpdateStatus: (cb) => ipcRenderer.on('update-status', (_e, info) => cb(info)),
   installUpdate: () => ipcRenderer.send('update-install'),
+  onTyping: (cb) => ipcRenderer.on('typing', (_e, v) => cb(v)),
+  onAck: (cb) => ipcRenderer.on('ack', (_e, v) => cb(v)),
+  onContactPicker: (cb) => ipcRenderer.on('show-contact-picker', () => cb()),
+  getChats: () => ipcRenderer.invoke('get-chats'),
+  sendImageData: (mimetype, data) => ipcRenderer.invoke('send-image-data', { mimetype, data }),
 });
